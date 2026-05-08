@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(& \"C:\\\\Users\\\\sigtd\\\\anaconda3\\\\python.exe\" -c $script)"
+    ]
+  }
+}
