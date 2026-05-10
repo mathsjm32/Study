@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "git pull 2>&1 | tail -1",
+            "shell": "bash",
+            "timeout": 30,
+            "statusMessage": "GitHub에서 최신 변경사항 가져오는 중..."
+          }
+        ]
+      }
+    ]
+  }
+}
