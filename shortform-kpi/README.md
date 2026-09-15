@@ -41,17 +41,52 @@ Instagram·Facebook은 **누적값만** 준다. 그래서 주기적으로 누적
 
 이 시스템이 2개월 뒤 조용히 죽는 이유는 거의 항상 **토큰 만료**다. 아래 순서대로 하면 만료 없는 구성이 된다.
 
-## A. BigQuery (GCP 서비스 계정)
+## A. BigQuery
 
 1. [Google Cloud 콘솔](https://console.cloud.google.com/)에서 프로젝트 생성 (또는 기존 것 사용)
-2. **API 및 서비스 → 라이브러리**에서 다음 3개 사용 설정
+2. `.env` 의 `GCP_PROJECT_ID` 에 **프로젝트 ID** 입력 (프로젝트 '번호'가 아니다)
+3. **API 및 서비스 → 라이브러리**에서 다음 3개 사용 설정
    - `BigQuery API`
    - `YouTube Data API v3`
-   - `YouTube Analytics API`
-3. **IAM 및 관리자 → 서비스 계정 → 만들기**
+   - `YouTube Analytics API` ← 조회수·공유·저장 지표의 출처. 빠뜨리기 쉬움
+4. 아래 두 방식 중 하나로 인증
+
+### 방식 A — 서비스 계정 키 파일
+
+1. **IAM 및 관리자 → 서비스 계정 → 서비스 계정 만들기**
+   - 이름 `shortform-collector`
    - 역할: `BigQuery 데이터 편집자` + `BigQuery 작업 사용자`
-4. 해당 서비스 계정 → **키 → 키 추가 → JSON** → 내려받아 `credentials/gcp-sa.json` 으로 저장
-5. `.env`의 `GCP_PROJECT_ID` 에 프로젝트 ID 입력
+2. 생성된 계정 → **키** 탭 → **키 추가 → 새 키 만들기 → JSON**
+3. 내려받은 파일을 `credentials/gcp-sa.json` 으로 저장
+4. `.env` 에 경로 입력:
+   ```bash
+   GOOGLE_APPLICATION_CREDENTIALS=./credentials/gcp-sa.json
+   ```
+
+### 방식 B — gcloud 로그인 (권장)
+
+조직에 `iam.disableServiceAccountKeyCreation` 정책이 걸려 있으면 방식 A의 3번에서
+키 생성이 차단된다. 그때는 이쪽을 쓴다. 키 파일을 만들지 않으므로 유출 위험이 없어
+로컬 개발에는 원래 이 방식이 더 안전하다.
+
+1. [Google Cloud CLI](https://cloud.google.com/sdk/docs/install) 설치 후 터미널 재시작
+2. ```bash
+   gcloud auth login
+   gcloud config set project <프로젝트 ID>
+   gcloud auth application-default login
+   gcloud auth application-default set-quota-project <프로젝트 ID>
+   ```
+3. `.env` 의 인증 항목을 **비워 둔다**:
+   ```bash
+   GOOGLE_APPLICATION_CREDENTIALS=
+   GCP_SA_JSON=
+   ```
+
+`src/bq.py` 는 `GCP_SA_JSON` → 키 파일 → gcloud(ADC) 순으로 자격증명을 찾으므로,
+비워 두기만 하면 방식 B가 자동 적용된다.
+
+> **GitHub Actions 자동화(Step 6)는?** 키를 못 만드는 조직이라면 Workload Identity
+> Federation 으로 연결한다. 키 파일 없이 Actions 에 권한을 주는 방식이며 Step 6 에서 다룬다.
 
 > `credentials/` 와 `.env` 는 `.gitignore`에 등록되어 있다. 절대 커밋하지 말 것.
 

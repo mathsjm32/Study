@@ -28,9 +28,12 @@ def main() -> int:
     except Exception as exc:
         print(f"\n실패: {exc}")
         print("\n확인할 것:")
-        print("  · .env 의 GCP_PROJECT_ID 가 맞는지")
-        print("  · 서비스 계정에 BigQuery 데이터 편집자 + 작업 사용자 역할이 있는지")
-        print("  · GOOGLE_APPLICATION_CREDENTIALS 경로에 키 파일이 있는지")
+        print("  · .env 의 GCP_PROJECT_ID 가 맞는지 (프로젝트 '번호'가 아니라 'ID')")
+        print("  · 계정에 BigQuery 데이터 편집자 + 작업 사용자 역할이 있는지")
+        print("  · 인증이 되어 있는지:")
+        print("      - 키 파일 방식: GOOGLE_APPLICATION_CREDENTIALS 경로에 파일이 있는지")
+        print("      - gcloud 방식 : gcloud auth application-default login 을 했는지")
+        print("        (조직 정책으로 서비스 계정 키를 못 만들면 gcloud 방식을 쓴다)")
         return 1
 
     print("\n완료. 다음: python scripts/check_auth.py")
