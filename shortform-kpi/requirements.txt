@@ -1,0 +1,18 @@
+# --- BigQuery / GCP ---
+google-cloud-bigquery>=3.25
+google-auth>=2.30
+google-auth-oauthlib>=1.2
+google-api-python-client>=2.140
+
+# --- HTTP / 환경변수 ---
+requests>=2.32
+python-dotenv>=1.0
+
+# --- 데이터 처리 ---
+pandas>=2.2
+pyarrow>=17
+db-dtypes>=1.3
+
+# --- 대시보드 (Step 5) ---
+streamlit>=1.38
+plotly>=5.24

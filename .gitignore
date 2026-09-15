@@ -1,1 +1,11 @@
 .ipynb_checkpoints/
+
+# --- shortform-kpi ---
+.env
+credentials/
+*.json.key
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.streamlit/secrets.toml
