@@ -102,34 +102,69 @@ def insight_values(payload: dict) -> dict[str, Any]:
     return values
 
 
-def resolve_metrics(
-    path: str, candidates: Sequence[str], *, label: str = "", **params: Any
+def resolve(
+    path: str,
+    candidates: Sequence[str],
+    *,
+    param: str = "metric",
+    label: str = "",
+    **params: Any,
 ) -> list[str]:
-    """후보 중 이 계정에서 실제로 조회되는 지표만 남긴다.
+    """후보 중 이 계정/노드에서 실제로 조회되는 것만 남긴다.
 
-    Meta 가 거부한 지표 이름은 보통 오류 메시지에 그대로 들어 있다. 메시지로
-    특정할 수 없으면 하나씩 시험해 본다(최초 1회뿐이라 비용이 크지 않다).
+    지표(`metric`)와 필드(`fields`) 모두에 쓴다. Meta 는 거부한 이름을 오류
+    메시지에 그대로 담아 주므로("Tried accessing nonexisting field (x)"),
+    메시지에서 범인을 찾아 빼고 다시 시도한다. 특정하지 못하면 하나씩
+    확인한다. 실행당 한 번만 하므로 호출량이 늘지 않는다.
     """
+    kind = "지표" if param == "metric" else "필드"
     working = list(candidates)
+
     while working:
         try:
-            get(path, metric=",".join(working), **params)
+            get(path, **{param: ",".join(working)}, **params)
             return working
         except MetaError as error:
-            rejected = [m for m in working if m in error.message]
+            rejected = [name for name in working if name in error.message]
             if not rejected:
                 break
-            for metric in rejected:
-                print(f"    [지표 제외] {metric} — API 가 거부함")
-            working = [m for m in working if m not in rejected]
+            for name in rejected:
+                print(f"    [{kind} 제외] {name} — API 가 거부함")
+            working = [name for name in working if name not in rejected]
 
-    # 메시지에서 범인을 못 찾은 경우: 하나씩 확인한다
-    print(f"    지표를 하나씩 확인합니다{f' ({label})' if label else ''}…")
+    print(f"    {kind}를 하나씩 확인합니다{f' ({label})' if label else ''}…")
     survivors: list[str] = []
-    for metric in candidates:
+    for name in candidates:
         try:
-            get(path, metric=metric, **params)
-            survivors.append(metric)
+            get(path, **{param: name}, **params)
+            survivors.append(name)
         except MetaError as error:
-            print(f"    [지표 제외] {metric} — {error.message[:80]}")
+            print(f"    [{kind} 제외] {name} — {error.message[:80]}")
     return survivors
+
+
+def resolve_metrics(path: str, candidates: Sequence[str], **kwargs: Any) -> list[str]:
+    return resolve(path, candidates, param="metric", **kwargs)
+
+
+def resolve_fields(path: str, candidates: Sequence[str], **kwargs: Any) -> list[str]:
+    return resolve(path, candidates, param="fields", **kwargs)
+
+
+def apply_map(
+    values: dict[str, Any], mapping: dict[str, str], convert=None
+) -> dict[str, Any]:
+    """{지표명: 값} 을 {컬럼: 값} 으로 옮긴다.
+
+    같은 컬럼에 여러 지표가 매핑될 수 있다(플랫폼이 이름을 바꾼 경우 등).
+    mapping 에 먼저 적힌 지표가 우선하고, 값이 없으면 다음 후보로 넘어간다.
+    """
+    out: dict[str, Any] = {}
+    for metric, column in mapping.items():
+        if out.get(column) is not None:
+            continue
+        value = values.get(metric)
+        if value is None:
+            continue
+        out[column] = convert(value) if convert else value
+    return out

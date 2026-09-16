@@ -215,6 +215,13 @@ python scripts/collect.py all                  # 구현된 모든 플랫폼
   `resolve_metrics` 가 실행당 한 번 호출해 보고 거부된 지표만 빼낸다.
   Meta 가 지표를 폐기해도 수집이 멈추지 않고, 무엇이 빠졌는지 `ops_run_log` 에 남는다.
   원본 응답은 `raw_json` 에 보관하므로 나중에 재해석할 수 있다.
+- **Facebook 릴스 판별**은 `permalink_url` 에 `/reel/` 이 있는지를 1순위로,
+  길이 `FB_REELS_MAX_SEC`(90초) 이하를 2순위로 본다. 목록도 이중화해서
+  `/{page-id}/video_reels` 엣지를 먼저 시도하고 안 되면 `/{page-id}/videos` 로 내려간다.
+- **Facebook 은 저장(saves) 지표가 없다.** Page 영상 인사이트가 제공하지 않으므로
+  `fact_snapshot.saves` 는 항상 NULL 이다. 저장률 KPI 는 Instagram 에만 적용된다.
+- **응답이 기대와 다르면** `python scripts/probe_meta.py instagram|facebook` 으로
+  원본 응답을 그대로 확인할 수 있다. BigQuery 에는 아무것도 쓰지 않는다.
 - **`--days` 의 뜻이 플랫폼마다 다르다.** YouTube 는 *지표 날짜 범위*,
   Instagram/Facebook 은 *대상 콘텐츠의 게시일 범위*다.
 - 실행 이력은 `ops_run_log` 에 남는다. 결측 구간을 찾을 때 이 테이블을 본다.

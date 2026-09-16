@@ -37,15 +37,18 @@ def run_instagram(days: int | None) -> int:
     )
 
 
-def not_implemented(platform: str) -> int:
-    print(f"\n[{platform}] 아직 구현되지 않았습니다.")
-    return 0
+def run_facebook(days: int | None) -> int:
+    from src.collectors import facebook
+
+    return base.run_collector(
+        "facebook", lambda result: facebook.collect(result, days=days)
+    )
 
 
 RUNNERS = {
     "youtube": run_youtube,
     "instagram": run_instagram,
-    "facebook": lambda days: not_implemented("facebook"),
+    "facebook": run_facebook,
 }
 
 

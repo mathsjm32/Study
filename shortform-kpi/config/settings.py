@@ -136,13 +136,45 @@ IG_MS_METRIC_MAP = {
     "ig_reels_avg_watch_time": "avg_watch_sec",
 }
 
+# Facebook 릴스는 지표 이름이 Instagram 과 전혀 다르고, 같은 개념에 이름이
+# 여러 개 있는 경우도 있다. 후보를 넉넉히 두고 resolve_metrics 로 걸러낸다.
 FB_REELS_METRICS = [
     "blue_reels_play_count",
+    "post_video_views",
+    "post_video_views_unique",
     "post_impressions_unique",
     "post_video_avg_time_watched",
     "post_video_view_time",
     "post_video_social_actions",
+    "post_video_likes_by_reaction_type",
 ]
+
+# 같은 컬럼에 여러 후보가 매핑된다. 먼저 적힌 지표가 우선한다.
+FB_METRIC_MAP = {
+    "blue_reels_play_count": "views",
+    "post_video_views": "views",
+    "post_video_views_unique": "reach",
+    "post_impressions_unique": "reach",
+}
+FB_MS_METRIC_MAP = {"post_video_avg_time_watched": "avg_watch_sec"}
+FB_SEC_METRIC_MAP = {"post_video_view_time": "watch_time_sec"}
+
+# 영상 객체에서 가져올 필드 후보. 노드 타입에 따라 없는 필드가 있으므로
+# resolve_fields 로 확정한다.
+FB_VIDEO_FIELDS = [
+    "id",
+    "title",
+    "description",
+    "created_time",
+    "length",
+    "permalink_url",
+    "picture",
+    "likes.summary(true)",
+    "comments.summary(true)",
+]
+
+# Facebook 릴스 길이 상한(초). 릴스 판별의 보조 신호로 쓴다.
+FB_REELS_MAX_SEC = 90
 
 # YouTube Analytics API 는 이름이 안정적이라 고정으로 둔다.
 YT_DAILY_METRICS = [
