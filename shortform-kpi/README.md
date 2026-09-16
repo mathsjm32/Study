@@ -182,7 +182,24 @@ python scripts/check_auth.py
 
 # 특정 항목만 점검
 python scripts/check_auth.py meta
+
+# 4) 수집 실행
+python scripts/collect.py youtube              # 최근 3일 재수집 (기본)
+python scripts/collect.py youtube --days 90    # 90일 소급 수집 (최초 1회)
+python scripts/collect.py all                  # 구현된 모든 플랫폼
 ```
+
+### 수집 동작 메모
+
+- **YouTube Shorts 판별은 길이 기준**이다. Data API 가 Shorts 여부 플래그를 주지
+  않으므로 `YT_SHORTS_MAX_SEC`(기본 180초) 이하를 Shorts 로 본다.
+- **일별 지표는 영상 하나씩 조회**한다. Analytics API 의 `video` 차원 리포트는
+  기간 합산 '상위 영상' 형태라 `day` 와 함께 쓸 수 없다. 영상이 수백 개를 넘으면
+  YouTube Reporting API(벌크 CSV)로 옮기는 편이 낫다.
+- **쿼터**: 영상 목록은 `search.list`(100 units) 대신 `playlistItems.list`(1 unit)와
+  `videos.list`(1 unit/50개)를 쓴다. Analytics API 쿼터는 Data API 와 별도다.
+- **최근 3일은 매번 다시 가져와 덮어쓴다.** YouTube 수치가 2~3일간 확정되지 않기 때문.
+- 실행 이력은 `ops_run_log` 에 남는다. 결측 구간을 찾을 때 이 테이블을 본다.
 
 `check_auth.py` 가 세 항목 모두 "통과"면 Step 1로 넘어간다.
 

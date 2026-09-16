@@ -146,3 +146,19 @@ ROLLING_REFETCH_DAYS = 3
 
 # 첫 실행 시 소급 수집할 기간.
 INITIAL_BACKFILL_DAYS = 90
+
+# YouTube 는 API 에 '이 영상이 Shorts 인가' 플래그를 주지 않는다. 길이로 판별하며
+# (현재 Shorts 상한은 3분), 경계값이 바뀌면 이 값만 고치면 된다.
+YT_SHORTS_MAX_SEC = 180
+
+# Analytics 지표를 통합 스키마 컬럼으로 옮기는 규칙.
+# videosAddedToPlaylists 는 '저장'과 완전히 같지는 않지만 가장 가까운 대용이다.
+YT_METRIC_MAP = {
+    "views": "views",
+    "likes": "likes",
+    "comments": "comments",
+    "shares": "shares",
+    "videosAddedToPlaylists": "saves",
+    "averageViewDuration": "avg_watch_sec",
+    "averageViewPercentage": "avg_view_pct",
+}

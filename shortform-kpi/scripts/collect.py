@@ -1,0 +1,66 @@
+"""수집 실행 CLI.
+
+    python scripts/collect.py youtube              # 최근 3일 (기본, 재수집)
+    python scripts/collect.py youtube --days 90    # 90일 소급 수집
+    python scripts/collect.py all                  # 구현된 모든 플랫폼
+
+몇 번을 실행해도 같은 결과가 되도록 모든 적재는 UPSERT 로 이뤄진다.
+YouTube 수치는 2~3일간 확정되지 않으므로 기본값이 최근 3일 재수집이다.
+"""
+from __future__ import annotations
+
+import argparse
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from config.settings import INITIAL_BACKFILL_DAYS  # noqa: E402
+from src.collectors import base  # noqa: E402
+
+PLATFORMS = ("youtube", "instagram", "facebook")
+
+
+def run_youtube(days: int | None) -> int:
+    from src.collectors import youtube
+
+    return base.run_collector(
+        "youtube", lambda result: youtube.collect(result, days=days)
+    )
+
+
+def not_implemented(platform: str) -> int:
+    print(f"\n[{platform}] 아직 구현되지 않았습니다.")
+    return 0
+
+
+RUNNERS = {
+    "youtube": run_youtube,
+    "instagram": lambda days: not_implemented("instagram"),
+    "facebook": lambda days: not_implemented("facebook"),
+}
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="숏폼 지표 수집")
+    parser.add_argument(
+        "platform", choices=(*PLATFORMS, "all"), help="수집할 플랫폼"
+    )
+    parser.add_argument(
+        "--days", type=int, default=None,
+        help=f"수집할 기간(일). 생략하면 최근 며칠만 재수집. 최초 적재는 --days {INITIAL_BACKFILL_DAYS} 권장",
+    )
+    args = parser.parse_args()
+
+    targets = PLATFORMS if args.platform == "all" else (args.platform,)
+    codes = [RUNNERS[name](args.days) for name in targets]
+
+    failed = [name for name, code in zip(targets, codes) if code != 0]
+    if failed:
+        print(f"\n실패한 플랫폼: {', '.join(failed)}")
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
