@@ -94,18 +94,44 @@ Instagram·Facebook은 **누적값만** 준다. 그래서 주기적으로 누적
 
 BigQuery와 달리 서비스 계정으로는 안 된다. **내 채널의 Analytics를 읽는 것이므로 채널 소유자 OAuth가 필요**하다.
 
-1. **API 및 서비스 → OAuth 동의 화면**
-   - 사용자 유형: 외부
-   - ⚠️ **반드시 "게시(In production)" 상태로 전환**
-     테스트 상태면 refresh token이 **7일 만에 만료**되어 매주 깨진다.
+1. **API 및 서비스 → OAuth 동의 화면** (= Google 인증 플랫폼)
+   - 사용자 유형: **내부** — 채널 계정과 같은 Workspace 조직에서 만든
+     프로젝트라면 이쪽이 훨씬 간단하다. 브랜딩·게시 절차가 없고 경고 화면도 없다.
+   - 사용자 유형: **외부** — 그 외의 경우. 게시하려면 브랜딩 페이지에
+     홈페이지·개인정보처리방침 URL 과 Search Console 로 소유 확인된
+     승인된 도메인이 필요하다. (`docs/index.html`, `docs/privacy.html` 을
+     GitHub Pages 등에 올려 쓰면 된다)
+   - ⚠️ 외부라면 **반드시 "게시(In production)" 상태로 전환**.
+     테스트 상태면 refresh token 이 **7일 만에 만료**되어 매주 깨진다.
    - 범위에 `yt-analytics.readonly`, `youtube.readonly` 추가
+   - 앱 로고는 올리지 않는다. 올리면 브랜드 검증 대상이 되어 심사가 필요해진다.
+   - "확인되지 않은 앱" 경고와 100명 사용자 상한은 남지만, 동의할 계정이
+     한두 개뿐이라면 심사를 받을 필요가 없다.
 2. **사용자 인증 정보 → OAuth 클라이언트 ID → 데스크톱 앱**
    → `YT_CLIENT_ID`, `YT_CLIENT_SECRET` 을 `.env`에 입력
-3. 로컬 PC에서 실행 (브라우저가 열림):
+3. refresh token 발급 — 상황에 맞는 모드를 고른다.
+
+   **채널 계정으로 이 PC에서 로그인할 수 있으면:**
    ```bash
    python scripts/get_youtube_token.py
    ```
+   브라우저가 열리고, 동의하면 토큰이 출력된다.
+
+   **채널 소유자(담당자)가 자기 PC에서 동의해야 하면:**
+   ```bash
+   python scripts/get_youtube_token.py --manual
+   ```
+   인증 URL 이 출력된다. 담당자에게 전달하면 담당자가 본인 PC에서 로그인·동의하고,
+   그 뒤 이동하는 `http://localhost:8080/?code=...` 주소를 회신해 준다. 그 주소를
+   스크립트에 붙여넣으면 토큰 교환이 끝난다. 담당자는 파이썬을 설치할 필요도,
+   이쪽 PC를 만질 필요도 없다. (인증 코드는 약 10분 후 만료)
+
    출력된 `YT_REFRESH_TOKEN` 을 `.env`에 붙여넣는다.
+
+> **YouTube Studio 의 권한 위임(관리자/편집자/뷰어)으로는 API 를 쓸 수 없다.**
+> Studio 화면에서는 데이터가 보이지만 API 호출은 403 으로 막힌다. API 접근은
+> 소유자(Owner) 계정의 OAuth 동의가 필요하므로, 위의 `--manual` 모드로
+> 소유자에게 1회 동의를 받는 것이 가장 부담이 적다.
 
 ## C. Meta (Instagram + Facebook 공통)
 
