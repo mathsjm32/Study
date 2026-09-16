@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>개인정보처리방침 — shortform-kpi</title>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    margin: 0 auto; padding: 32px 20px; max-width: 720px;
+    font-family: system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif;
+    line-height: 1.75; color: #1a1a1a; background: #fff;
+  }
+  @media (prefers-color-scheme: dark) {
+    body { color: #e8e8e8; background: #141414; }
+    code { background: #2a2a2a; }
+    footer, .updated { border-color: #333; color: #999; }
+    th, td { border-color: #333; }
+  }
+  h1 { font-size: 1.5rem; }
+  h2 { font-size: 1.1rem; margin-top: 2em; }
+  .updated { color: #666; font-size: .875rem; }
+  ul { padding-left: 1.2em; }
+  code { background: #f2f2f2; padding: .1em .35em; border-radius: 4px; font-size: .9em; }
+  table { border-collapse: collapse; width: 100%; margin: 1em 0; font-size: .925rem; }
+  th, td { border: 1px solid #ddd; padding: .5em .7em; text-align: left; }
+  th { background: rgba(128,128,128,.12); }
+  footer { margin-top: 3em; padding-top: 1em; border-top: 1px solid #e0e0e0; font-size: .875rem; color: #666; }
+  a { color: #1a56db; }
+  @media (prefers-color-scheme: dark) { a { color: #7aa2f7; } }
+</style>
+</head>
+<body>
+
+<h1>개인정보처리방침</h1>
+<p class="updated">최종 수정일: 2026년 9월 16일</p>
+
+<p>
+  본 방침은 숏폼 콘텐츠 성과 분석 도구 <strong>shortform-kpi</strong>(이하 "본 도구")가
+  Google 사용자 데이터를 어떻게 수집 · 이용 · 저장 · 공유하는지 설명합니다.
+</p>
+
+<h2>1. 본 도구의 성격</h2>
+<p>
+  본 도구는 일반에 제공되는 서비스가 아니라, 운영자가 본인이 소유하거나 관리 권한을
+  보유한 소셜 채널의 콘텐츠 성과를 분석하기 위해 운영자 본인의 환경에서 실행하는
+  개인용 분석 스크립트입니다. 회원 가입 절차가 없으며 불특정 다수의 이용자를
+  대상으로 하지 않습니다.
+</p>
+
+<h2>2. 요청하는 권한 범위</h2>
+<table>
+  <tr><th>범위</th><th>용도</th></tr>
+  <tr>
+    <td><code>youtube.readonly</code></td>
+    <td>채널 및 영상의 기본 정보(제목, 게시일, 길이 등) 조회</td>
+  </tr>
+  <tr>
+    <td><code>yt-analytics.readonly</code></td>
+    <td>영상별 성과 지표(조회수, 좋아요, 댓글, 공유, 재생목록 추가, 시청 시간) 조회</td>
+  </tr>
+</table>
+<p>
+  두 범위 모두 <strong>읽기 전용</strong>입니다. 본 도구는 영상의 업로드 · 수정 · 삭제,
+  댓글 작성, 채널 설정 변경 등 어떠한 쓰기 권한도 요청하지 않으며 수행할 수 없습니다.
+</p>
+
+<h2>3. 수집하는 데이터</h2>
+<ul>
+  <li>채널 식별자 및 채널명</li>
+  <li>영상 식별자, 제목, 게시 일시, 영상 길이</li>
+  <li>영상별 성과 지표: 조회수, 좋아요 수, 댓글 수, 공유 수, 재생목록 추가 수,
+      추정 시청 시간, 평균 시청 지속률, 구독자 증감</li>
+</ul>
+<p>
+  시청자 개개인을 식별할 수 있는 정보는 수집하지 않습니다. Google이 제공하는 지표는
+  모두 집계된 형태이며, 본 도구는 그 이상의 개인 정보에 접근하지 않습니다.
+</p>
+
+<h2>4. 데이터의 이용 목적</h2>
+<p>
+  수집한 데이터는 오직 <strong>콘텐츠 성과 분석</strong> 목적으로만 이용됩니다.
+  구체적으로 콘텐츠별 성과 비교, 시계열 추이 확인, 참여율 · 저장률 · 공유율 등
+  파생 지표 산출에 사용됩니다. 광고 타게팅, 인물 프로파일링, 머신러닝 모델의
+  외부 판매 등 다른 목적으로는 이용하지 않습니다.
+</p>
+
+<h2>5. 데이터의 저장</h2>
+<p>
+  수집한 데이터는 운영자가 관리하는 비공개 Google BigQuery 데이터셋에 저장됩니다.
+  해당 데이터셋은 운영자 계정에만 접근 권한이 부여되어 있으며 공개되지 않습니다.
+  인증에 사용되는 토큰은 운영자의 로컬 환경에만 보관되며, 버전 관리 시스템이나
+  공개 저장소에 포함되지 않습니다.
+</p>
+
+<h2>6. 데이터의 공유</h2>
+<p>
+  본 도구는 수집한 데이터를 <strong>제3자에게 판매 · 양도 · 공개하지 않습니다.</strong>
+  데이터를 외부 서비스로 전송하지 않으며, Google API로부터 받은 데이터는
+  운영자의 저장소를 벗어나지 않습니다.
+</p>
+
+<h2>7. 보관 기간 및 삭제</h2>
+<p>
+  데이터는 분석 목적이 유지되는 동안 보관하며, 목적이 종료되면 데이터셋 전체를
+  삭제합니다. 채널 소유자가 삭제를 요청하는 경우 해당 채널의 데이터를 즉시
+  삭제합니다.
+</p>
+
+<h2>8. 접근 권한 철회 방법</h2>
+<p>
+  권한을 부여한 Google 계정에서 언제든지 접근을 철회할 수 있습니다.
+  <a href="https://myaccount.google.com/permissions">Google 계정 &gt; 보안 &gt; 타사 앱 및 서비스</a>
+  에서 본 도구를 선택해 액세스를 삭제하면 즉시 데이터 수집이 중단됩니다.
+</p>
+
+<h2>9. Google API 서비스 사용자 데이터 정책 준수</h2>
+<p>
+  본 도구의 Google API로부터 수신한 정보의 이용 및 다른 앱으로의 전송은
+  <a href="https://developers.google.com/terms/api-services-user-data-policy">Google API 서비스 사용자 데이터 정책</a>
+  (제한적 사용 요건 포함)을 준수합니다.
+</p>
+
+<h2>10. 문의</h2>
+<p>본 방침에 관한 문의는 아래로 연락해 주세요.</p>
+<p>이메일: wjdals3232@gmail.com</p>
+
+<footer>
+  <p><a href="index.html">&larr; shortform-kpi 홈으로</a></p>
+</footer>
+
+</body>
+</html>

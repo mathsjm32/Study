@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>shortform-kpi — 숏폼 콘텐츠 성과 분석 도구</title>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    margin: 0 auto; padding: 32px 20px; max-width: 720px;
+    font-family: system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif;
+    line-height: 1.75; color: #1a1a1a; background: #fff;
+  }
+  @media (prefers-color-scheme: dark) {
+    body { color: #e8e8e8; background: #141414; }
+    code { background: #2a2a2a; }
+    footer { border-color: #333; color: #999; }
+  }
+  h1 { font-size: 1.6rem; margin-bottom: .2em; }
+  h2 { font-size: 1.15rem; margin-top: 2em; }
+  .sub { color: #666; margin-top: 0; }
+  ul { padding-left: 1.2em; }
+  code { background: #f2f2f2; padding: .1em .35em; border-radius: 4px; font-size: .9em; }
+  footer { margin-top: 3em; padding-top: 1em; border-top: 1px solid #e0e0e0; font-size: .875rem; color: #666; }
+  a { color: #1a56db; }
+  @media (prefers-color-scheme: dark) { a { color: #7aa2f7; } }
+</style>
+</head>
+<body>
+
+<h1>shortform-kpi</h1>
+<p class="sub">숏폼 콘텐츠(Shorts · Reels) 성과 지표 자동 수집 및 분석 도구</p>
+
+<h2>이 도구는 무엇인가요</h2>
+<p>
+  운영자가 직접 소유하거나 관리 권한을 가진 소셜 채널에 업로드한 숏폼 콘텐츠의
+  성과 지표를 주기적으로 자동 수집하여, 콘텐츠별 성과를 비교·분석할 수 있게 하는
+  개인용 분석 도구입니다. 수작업으로 각 플랫폼의 대시보드를 열어 수치를 옮겨 적던
+  과정을 자동화하는 것이 목적입니다.
+</p>
+
+<h2>주요 기능</h2>
+<ul>
+  <li>YouTube Shorts · Instagram Reels · Facebook Reels 성과 지표 자동 수집</li>
+  <li>조회수 · 좋아요 · 댓글 · 공유 · 저장 · 시청 시간 등의 시계열 추적</li>
+  <li>플랫폼별 지표 정의 차이를 보정한 비율 지표(참여율 · 저장률 · 공유율) 산출</li>
+  <li>수집 데이터를 기반으로 한 성과 대시보드 제공</li>
+</ul>
+
+<h2>Google 사용자 데이터를 어떻게 사용하나요</h2>
+<p>
+  이 도구는 <strong>사용자가 명시적으로 권한을 부여한 본인의 YouTube 채널</strong>에 대해
+  읽기 전용 권한(<code>youtube.readonly</code>, <code>yt-analytics.readonly</code>)만
+  요청합니다. 영상의 업로드 · 수정 · 삭제 권한은 요청하지 않으며, 수집한 데이터는
+  운영자 본인의 비공개 데이터베이스에만 저장되고 외부에 제공되지 않습니다.
+</p>
+<p>자세한 내용은 <a href="privacy.html">개인정보처리방침</a>을 참고해 주세요.</p>
+
+<h2>배포 형태</h2>
+<p>
+  이 도구는 공개 서비스가 아니라 운영자 본인의 로컬 환경에서 실행되는
+  자체 분석 스크립트입니다. 소스 코드는
+  <a href="https://github.com/mathsjm32/Study">GitHub 저장소</a>에서 확인할 수 있습니다.
+</p>
+
+<footer>
+  <p><a href="privacy.html">개인정보처리방침</a></p>
+  <p>문의: wjdals3232@gmail.com</p>
+</footer>
+
+</body>
+</html>
