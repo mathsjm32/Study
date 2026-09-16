@@ -5,8 +5,15 @@
   * Data API v3      — 어떤 영상이 있고 길이·제목·게시일이 무엇인지 (메타데이터)
   * Analytics API v2 — 그 영상이 날짜별로 어떤 성과를 냈는지 (지표)
 
-Shorts 판별은 길이로 한다. Data API 는 Shorts 여부를 알려주는 필드를 제공하지
-않기 때문이다(`YT_SHORTS_MAX_SEC`).
+Shorts 판별은 Data API 에 전용 플래그가 없어 두 신호를 합쳐서 한다.
+
+  * 길이   — 3분을 넘으면 Shorts 가 아니다 (필요조건)
+  * 종횡비 — part=player + maxHeight 를 주면 embedWidth/embedHeight 가 영상의
+             실제 비율로 돌아온다. 9:16 이면 0.5625, 16:9 면 1.78.
+
+길이만 보면 30초짜리 가로 영상이 Shorts 로 잘못 분류된다. 비율까지 보면 그
+오분류가 사라진다. 비율을 못 얻은 영상은 길이만으로 판정하고, 비율 기준이
+후보를 전부 배제하는 이상 상황에서는 길이 기준으로 되돌린다(신호 오작동 방어).
 
 일별 지표는 영상 하나씩 조회한다. Analytics API 의 `video` 차원 리포트는
 기간 전체를 합산한 '상위 영상' 형태라 `day` 와 함께 쓸 수 없고, 날짜별
@@ -17,7 +24,8 @@ from __future__ import annotations
 
 import datetime as dt
 import json
-from typing import Any, Iterable
+from collections import Counter
+from typing import Any
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -29,6 +37,8 @@ from config.settings import (
     YT,
     YT_DAILY_METRICS,
     YT_METRIC_MAP,
+    YT_PLAYER_PROBE_HEIGHT,
+    YT_SHORTS_MAX_ASPECT,
     YT_SHORTS_MAX_SEC,
 )
 from src import bq
@@ -110,19 +120,50 @@ def fetch_video_ids(data: Any, uploads_playlist: str) -> list[str]:
 
 
 def fetch_video_details(data: Any, video_ids: list[str]) -> list[dict]:
-    """영상 상세를 50개씩 묶어 가져온다(호출당 1 unit)."""
+    """영상 상세를 50개씩 묶어 가져온다(호출당 1 unit).
+
+    maxHeight 를 주어야 player.embedWidth/embedHeight 가 채워진다. 이 값이
+    영상의 실제 종횡비를 반영하므로 Shorts 판별에 쓴다.
+    """
     details: list[dict] = []
     for batch in chunked(video_ids, 50):
         response = data.videos().list(
-            part="snippet,contentDetails,statistics", id=",".join(batch)
+            part="snippet,contentDetails,statistics,player",
+            id=",".join(batch),
+            maxHeight=YT_PLAYER_PROBE_HEIGHT,
         ).execute()
         details.extend(response.get("items", []))
     return details
 
 
-def is_short(video: dict) -> bool:
+# ---------------------------------------------------------------------------
+# Shorts 판별
+# ---------------------------------------------------------------------------
+def aspect_ratio(video: dict) -> float | None:
+    """width / height. 세로 영상이면 1 미만, 가로면 1 초과. 모르면 None."""
+    player = video.get("player") or {}
+    width = as_int(player.get("embedWidth"))
+    height = as_int(player.get("embedHeight"))
+    if not width or not height:
+        return None
+    return round(width / height, 4)
+
+
+def within_duration(video: dict) -> bool:
     duration = parse_iso_duration(video.get("contentDetails", {}).get("duration"))
     return duration is not None and 0 < duration <= YT_SHORTS_MAX_SEC
+
+
+def classify_short(video: dict) -> tuple[bool, str]:
+    """(Shorts 인가, 판정 근거). 근거는 분류 결과를 눈으로 확인하기 위한 것."""
+    if not within_duration(video):
+        return False, "제외: 길이 초과"
+    ratio = aspect_ratio(video)
+    if ratio is None:
+        return True, "포함: 길이만 확인(비율 정보 없음)"
+    if ratio <= YT_SHORTS_MAX_ASPECT:
+        return True, "포함: 길이 + 세로 비율"
+    return False, "제외: 가로 영상"
 
 
 def to_content_row(video: dict, now: dt.datetime) -> dict:
@@ -138,6 +179,7 @@ def to_content_row(video: dict, now: dt.datetime) -> dict:
         "published_at": published_at,
         "published_date": (published_at or "")[:10] or None,
         "duration_sec": parse_iso_duration(video.get("contentDetails", {}).get("duration")),
+        "aspect_ratio": aspect_ratio(video),
         "title": snippet.get("title"),
         "caption": snippet.get("description"),
         "hashtags": extract_hashtags(snippet.get("title"), snippet.get("description")),
@@ -251,9 +293,27 @@ def collect(result: CollectResult, days: int | None = None) -> None:
     uploads = channel["contentDetails"]["relatedPlaylists"]["uploads"]
     video_ids = fetch_video_ids(data, uploads)
     videos = fetch_video_details(data, video_ids)
-    shorts = [v for v in videos if is_short(v)]
+
+    decisions = [(video, *classify_short(video)) for video in videos]
+    shorts = [video for video, ok, _ in decisions if ok]
+    reasons = Counter(reason for _, _, reason in decisions)
+
     print(f"  영상 {len(videos)}개 중 Shorts {len(shorts)}개 "
-          f"(기준: {YT_SHORTS_MAX_SEC}초 이하)")
+          f"(기준: {YT_SHORTS_MAX_SEC}초 이하 + 비율 {YT_SHORTS_MAX_ASPECT} 이하)")
+    for reason, count in sorted(reasons.items()):
+        print(f"    {reason:<28} {count:>4}개")
+
+    # 비율 신호가 후보를 전부 배제하면 신호 자체가 잘못됐을 가능성이 크다.
+    # (임베드 플레이어가 세로 영상도 16:9 로 감싸 주는 경우 등)
+    # 조용히 0건으로 끝내는 대신 길이 기준으로 되돌리고 경고를 남긴다.
+    duration_only = [video for video in videos if within_duration(video)]
+    if duration_only and not shorts:
+        result.note(
+            f"비율 기준이 후보 {len(duration_only)}개를 모두 배제했습니다. "
+            "비율 신호를 무시하고 길이 기준만 적용합니다. "
+            "dim_content.aspect_ratio 를 확인해 기준을 조정하세요."
+        )
+        shorts = duration_only
 
     if not shorts:
         result.note("Shorts 가 없습니다. 채널에 숏폼 업로드가 있는지 확인하세요.")

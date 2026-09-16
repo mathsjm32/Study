@@ -191,8 +191,16 @@ python scripts/collect.py all                  # 구현된 모든 플랫폼
 
 ### 수집 동작 메모
 
-- **YouTube Shorts 판별은 길이 기준**이다. Data API 가 Shorts 여부 플래그를 주지
-  않으므로 `YT_SHORTS_MAX_SEC`(기본 180초) 이하를 Shorts 로 본다.
+- **YouTube Shorts 판별은 길이 + 종횡비**를 함께 본다. Data API 에 Shorts 여부
+  플래그가 없어서다.
+  - 길이: `YT_SHORTS_MAX_SEC`(기본 180초) 이하
+  - 비율: `videos.list` 에 `part=player` 와 `maxHeight` 를 주면
+    `player.embedWidth/embedHeight` 가 영상의 실제 비율로 온다.
+    9:16 이면 `0.5625`, 16:9 면 `1.78`. `YT_SHORTS_MAX_ASPECT`(기본 1.0) 이하만 통과.
+  - 길이만 보면 30초짜리 가로 영상이 Shorts 로 잘못 잡힌다. 비율을 함께 보면 걸러진다.
+  - 계산된 비율은 `dim_content.aspect_ratio` 에 저장되므로 분류 결과를 SQL 로 감사할 수 있다.
+  - 비율 기준이 후보를 **전부** 배제하면 신호 오작동으로 보고 길이 기준으로
+    되돌린 뒤 `ops_run_log` 에 경고를 남긴다. 조용히 0건이 되는 사고를 막기 위함이다.
 - **일별 지표는 영상 하나씩 조회**한다. Analytics API 의 `video` 차원 리포트는
   기간 합산 '상위 영상' 형태라 `day` 와 함께 쓸 수 없다. 영상이 수백 개를 넘으면
   YouTube Reporting API(벌크 CSV)로 옮기는 편이 낫다.

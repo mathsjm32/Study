@@ -147,9 +147,17 @@ ROLLING_REFETCH_DAYS = 3
 # 첫 실행 시 소급 수집할 기간.
 INITIAL_BACKFILL_DAYS = 90
 
-# YouTube 는 API 에 '이 영상이 Shorts 인가' 플래그를 주지 않는다. 길이로 판별하며
-# (현재 Shorts 상한은 3분), 경계값이 바뀌면 이 값만 고치면 된다.
+# YouTube 는 API 에 '이 영상이 Shorts 인가' 플래그를 주지 않는다. 두 신호를 함께 쓴다.
+#
+#   1) 길이   — Shorts 상한은 현재 3분. 이걸 넘으면 Shorts 가 아니다(필요조건).
+#   2) 종횡비 — videos.list 에 part=player 와 maxHeight 를 주면 embedWidth/embedHeight
+#              가 영상의 실제 비율로 돌아온다. 9:16 이면 0.5625, 16:9 면 1.78.
+#
+# 길이만으로는 30초짜리 가로 영상이 Shorts 로 잘못 분류된다. 비율을 함께 보면
+# 그 오분류가 사라진다. 비율 정보를 못 얻은 영상은 길이만으로 판정한다.
 YT_SHORTS_MAX_SEC = 180
+YT_SHORTS_MAX_ASPECT = 1.0  # 세로 또는 정사각(width/height <= 1)만 Shorts 로 본다
+YT_PLAYER_PROBE_HEIGHT = 720  # 비율 계산용. 값 자체는 의미 없고 비율만 쓴다
 
 # Analytics 지표를 통합 스키마 컬럼으로 옮기는 규칙.
 # videosAddedToPlaylists 는 '저장'과 완전히 같지는 않지만 가장 가까운 대용이다.

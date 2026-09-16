@@ -20,6 +20,7 @@ from google.oauth2 import service_account
 from config.settings import BQ, ROOT
 
 SCHEMA_PATH = ROOT / "sql" / "schema.sql"
+MIGRATIONS_PATH = ROOT / "sql" / "migrations.sql"
 
 
 # --------------------------------------------------------------------------
@@ -72,9 +73,17 @@ def ensure_dataset() -> str:
 
 
 def ensure_tables() -> list[str]:
-    """sql/schema.sql 을 실행해 테이블을 만든다(CREATE TABLE IF NOT EXISTS)."""
-    sql = SCHEMA_PATH.read_text(encoding="utf-8").replace("${DATASET}", BQ.dataset_ref)
-    get_client().query(sql).result()
+    """테이블을 만들고(schema.sql) 누락된 컬럼을 채운다(migrations.sql).
+
+    둘 다 IF NOT EXISTS 라 이미 만들어진 데이터셋에 다시 돌려도 안전하다.
+    """
+    client = get_client()
+    for path in (SCHEMA_PATH, MIGRATIONS_PATH):
+        if not path.exists():
+            continue
+        sql = path.read_text(encoding="utf-8").replace("${DATASET}", BQ.dataset_ref)
+        if sql.strip():
+            client.query(sql).result()
     return list_tables()
 
 

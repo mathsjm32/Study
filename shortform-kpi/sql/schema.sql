@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS `${DATASET}.dim_content` (
   published_at   TIMESTAMP,
   published_date DATE,
   duration_sec   INT64,
+  aspect_ratio   FLOAT64 OPTIONS(description="width/height. 9:16=0.5625, 16:9=1.78"),
   title          STRING,
   caption        STRING,
   hashtags       ARRAY<STRING>,
