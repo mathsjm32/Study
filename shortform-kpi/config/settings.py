@@ -118,6 +118,24 @@ IG_MEDIA_METRICS = [
     "ig_reels_video_view_total_time",
 ]
 
+# 인사이트 지표명 → 통합 스키마 컬럼. 실제로 어떤 지표가 살아 있는지는
+# src/meta.py 의 resolve_metrics 가 실행 시점에 확정한다.
+IG_METRIC_MAP = {
+    "views": "views",
+    "reach": "reach",
+    "likes": "likes",
+    "comments": "comments",
+    "shares": "shares",
+    "saved": "saves",
+    "total_interactions": "total_interactions",
+}
+
+# 밀리초로 오는 지표. 초로 바꿔 다른 플랫폼과 단위를 맞춘다.
+IG_MS_METRIC_MAP = {
+    "ig_reels_video_view_total_time": "watch_time_sec",
+    "ig_reels_avg_watch_time": "avg_watch_sec",
+}
+
 FB_REELS_METRICS = [
     "blue_reels_play_count",
     "post_impressions_unique",

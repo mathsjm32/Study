@@ -207,6 +207,16 @@ python scripts/collect.py all                  # 구현된 모든 플랫폼
 - **쿼터**: 영상 목록은 `search.list`(100 units) 대신 `playlistItems.list`(1 unit)와
   `videos.list`(1 unit/50개)를 쓴다. Analytics API 쿼터는 Data API 와 별도다.
 - **최근 3일은 매번 다시 가져와 덮어쓴다.** YouTube 수치가 2~3일간 확정되지 않기 때문.
+- **Instagram 은 누적값만 준다.** 미디어 인사이트에 날짜별 데이터가 없어서
+  주기적으로 누적값을 `fact_snapshot` 에 찍고, 일별 증분은 Step 4 의 SQL 뷰에서
+  차분으로 만든다. 그래서 IG 는 **자주 돌릴수록 시계열이 촘촘해진다**.
+- **Meta 지표 이름은 실행 시점에 확정한다.** `config/settings.py` 의
+  `IG_MEDIA_METRICS` 는 '요청해 볼 후보'일 뿐이고, `src/meta.py` 의
+  `resolve_metrics` 가 실행당 한 번 호출해 보고 거부된 지표만 빼낸다.
+  Meta 가 지표를 폐기해도 수집이 멈추지 않고, 무엇이 빠졌는지 `ops_run_log` 에 남는다.
+  원본 응답은 `raw_json` 에 보관하므로 나중에 재해석할 수 있다.
+- **`--days` 의 뜻이 플랫폼마다 다르다.** YouTube 는 *지표 날짜 범위*,
+  Instagram/Facebook 은 *대상 콘텐츠의 게시일 범위*다.
 - 실행 이력은 `ops_run_log` 에 남는다. 결측 구간을 찾을 때 이 테이블을 본다.
 
 `check_auth.py` 가 세 항목 모두 "통과"면 Step 1로 넘어간다.

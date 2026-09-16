@@ -29,6 +29,14 @@ def run_youtube(days: int | None) -> int:
     )
 
 
+def run_instagram(days: int | None) -> int:
+    from src.collectors import instagram
+
+    return base.run_collector(
+        "instagram", lambda result: instagram.collect(result, days=days)
+    )
+
+
 def not_implemented(platform: str) -> int:
     print(f"\n[{platform}] 아직 구현되지 않았습니다.")
     return 0
@@ -36,7 +44,7 @@ def not_implemented(platform: str) -> int:
 
 RUNNERS = {
     "youtube": run_youtube,
-    "instagram": lambda days: not_implemented("instagram"),
+    "instagram": run_instagram,
     "facebook": lambda days: not_implemented("facebook"),
 }
 
@@ -48,7 +56,12 @@ def main() -> int:
     )
     parser.add_argument(
         "--days", type=int, default=None,
-        help=f"수집할 기간(일). 생략하면 최근 며칠만 재수집. 최초 적재는 --days {INITIAL_BACKFILL_DAYS} 권장",
+        help=(
+            "되짚어 볼 기간(일). "
+            "YouTube 는 지표 날짜 범위(기본 최근 3일 재수집), "
+            "Instagram/Facebook 은 대상 콘텐츠의 게시일 범위"
+            f"(기본 {INITIAL_BACKFILL_DAYS}일)를 뜻한다."
+        ),
     )
     args = parser.parse_args()
 
