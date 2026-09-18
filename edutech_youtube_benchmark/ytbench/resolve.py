@@ -182,7 +182,13 @@ CONFIDENCE_REVIEW = 0.45    # 이상~OK 미만이면 검수 권장, 미만이면
 
 
 def extract_from_url(url: str) -> tuple[str, str]:
-    """채널 URL에서 (channel_id, handle)을 뽑는다."""
+    """붙여넣은 문자열에서 (channel_id, handle)을 뽑는다.
+
+    사람이 실제로 붙여넣는 형태를 모두 받는다: 전체 URL, /videos 같은 하위
+    경로, ?si= 추적 파라미터, m.youtube.com, 레거시 /c/ /user/ 경로,
+    그리고 URL 없이 '@핸들'만 적은 경우.
+    """
+    url = (url or "").strip()
     if not url:
         return "", ""
     if m := re.search(r"/channel/(UC[\w-]{20,})", url):
@@ -191,7 +197,24 @@ def extract_from_url(url: str) -> tuple[str, str]:
         return "", m.group(1)
     if m := re.search(r"youtube\.com/(?:c|user)/([\w.\-]+)", url):
         return "", m.group(1)      # 레거시 경로 — 핸들로 시도
+    # URL 없이 '@핸들'만 적은 경우 (가장 흔한 손입력 형태)
+    if m := re.fullmatch(r"@([\w.\-]{2,})", url):
+        return "", m.group(1)
     return "", ""
+
+
+def extract_video_id(url: str) -> str:
+    """영상 URL에서 video_id를 뽑는다.
+
+    채널 페이지 대신 영상 링크를 붙여넣는 경우가 흔하다. 영상에서 채널을
+    역추적하면 1 unit이면 되므로, 검색(100 units)보다 100배 싸다.
+    """
+    url = (url or "").strip()
+    if m := re.search(r"youtu\.be/([\w-]{11})", url):
+        return m.group(1)
+    if m := re.search(r"youtube\.com/(?:watch\?v=|shorts/|live/|embed/)([\w-]{11})", url):
+        return m.group(1)
+    return ""
 
 
 def resolve_all(
@@ -206,6 +229,7 @@ def resolve_all(
     direct_ids: dict[str, Company] = {}
     needs_search: list[Company] = []
     handle_targets: list[tuple[Company, str]] = []
+    video_targets: list[tuple[Company, str]] = []
 
     for c in companies:
         cid, handle = c.channel_id.strip(), c.handle.strip().lstrip("@")
@@ -215,11 +239,31 @@ def resolve_all(
             direct_ids[cid] = c
         elif handle:
             handle_targets.append((c, handle))
+        elif vid := extract_video_id(c.channel_url):
+            video_targets.append((c, vid))      # 영상 링크 -> 채널 역추적(1 unit)
         else:
             needs_search.append(c)
 
-    log.info("매칭 경로 분배 — ID직접 %d건, 핸들 %d건, 검색필요 %d건 (검색 예상 %d units)",
-             len(direct_ids), len(handle_targets), len(needs_search),
+    # 영상 링크로 채널을 먼저 확정한다 (50개씩 1 unit)
+    if video_targets:
+        by_vid = {vid: c for c, vid in video_targets}
+        try:
+            for item in client.videos_by_id(list(by_vid)):
+                owner = item.get("snippet", {}).get("channelId", "")
+                c = by_vid.get(item.get("id", ""))
+                if owner and c:
+                    direct_ids[owner] = c
+            found = set(direct_ids.values())
+            needs_search += [c for c, _ in video_targets if c not in found]
+        except QuotaExceeded:
+            if stop_on_quota:
+                log.warning("쿼터 소진 — 영상 링크 역추적 중단")
+                return results
+            raise
+
+    log.info("매칭 경로 분배 — ID직접 %d건, 핸들 %d건, 영상링크 %d건, 검색필요 %d건 "
+             "(검색 예상 %d units)", len(direct_ids), len(handle_targets),
+             len(video_targets), len(needs_search),
              len(needs_search) * config.QUOTA_COST["search.list"])
 
     # ID 직접 조회 (50개당 1 unit)
