@@ -1,0 +1,6 @@
+# 경쟁사 유튜브 벤치마킹 파이프라인 의존성
+requests>=2.31.0
+pandas>=2.0.0
+openpyxl>=3.1.0
+anthropic>=1.0.0        # LLM 정성 분석 (선택)
+python-dateutil>=2.8.0

@@ -1,0 +1,15 @@
+# API 키·경쟁사 입력·수집 원본·산출물은 커밋하지 않음
+.env
+# 회사 내부 경쟁사 목록 — 템플릿만 커밋한다
+data/companies.csv
+data/raw/*
+data/cache/*
+data/processed/*
+output/*
+!data/raw/.gitkeep
+!data/cache/.gitkeep
+!data/processed/.gitkeep
+!output/.gitkeep
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
