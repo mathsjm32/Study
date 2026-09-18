@@ -45,11 +45,18 @@ class Company:
     """입력 CSV 1행. company_name만 필수, 나머지는 있으면 쿼터를 크게 절약."""
 
     company_name: str
+    aliases: str = ""        # 파이프(|) 구분. 영문명·브랜드명 등 같은 회사의 다른 표기
     channel_url: str = ""
     handle: str = ""
     channel_id: str = ""
     category: str = ""
     note: str = ""
+
+    def name_variants(self) -> list[str]:
+        """검색어 + 별칭. 채널명 유사도 채점에 모두 사용한다."""
+        out = [self.company_name]
+        out += [a.strip() for a in (self.aliases or "").split("|") if a.strip()]
+        return out
 
 
 @dataclass
@@ -78,6 +85,7 @@ def load_companies(path: Path = config.COMPANIES_CSV) -> list[Company]:
 
     alias = {
         "company_name": {"company_name", "회사명", "기업명", "company", "name", "경쟁사"},
+        "aliases": {"aliases", "별칭", "별명", "alias", "영문명", "다른이름"},
         "channel_url": {"channel_url", "url", "채널url", "채널주소", "링크", "link"},
         "handle": {"handle", "핸들", "@handle"},
         "channel_id": {"channel_id", "채널id", "channelid"},
@@ -127,7 +135,15 @@ def normalize(name: str) -> str:
 
 
 # ── 매칭 점수 ─────────────────────────────────────────────────────────
-def name_similarity(company: str, channel_title: str) -> float:
+def name_similarity(company: str | Iterable[str], channel_title: str) -> float:
+    """회사명(또는 별칭 목록) 중 채널명과 가장 잘 맞는 하나의 유사도.
+
+    별칭을 쓰는 이유: 한글 사명과 영문 채널명이 다른 경우(뤼이드 <-> Riiid)
+    단일 문자열 비교로는 유사도가 0이 되어 자동 매칭이 전부 실패한다.
+    별칭 비교는 API를 더 호출하지 않으므로 쿼터 비용이 0이다.
+    """
+    if not isinstance(company, str):
+        return max((name_similarity(c, channel_title) for c in company), default=0.0)
     a, b = normalize(company), normalize(channel_title)
     if not a or not b:
         return 0.0
@@ -146,8 +162,8 @@ def edutech_affinity(text: str) -> float:
     return min(1.0, hits / 4.0)
 
 
-def score_candidate(company: str, item: dict[str, Any]) -> tuple[float, str]:
-    """검색 후보 1건의 신뢰도와 근거를 계산한다."""
+def score_candidate(company: str | Iterable[str], item: dict[str, Any]) -> tuple[float, str]:
+    """검색 후보 1건의 신뢰도와 근거를 계산한다. company는 별칭 목록도 가능."""
     snip = item.get("snippet", {})
     title = snip.get("channelTitle") or snip.get("title") or ""
     desc = snip.get("description", "")
@@ -251,8 +267,9 @@ def resolve_all(
             results.append(_failed(c, "검색 결과 0건 — 유튜브 채널 미보유 가능"))
             continue
 
+        variants = c.name_variants()
         scored = sorted(
-            ((*score_candidate(c.company_name, it), it) for it in items),
+            ((*score_candidate(variants, it), it) for it in items),
             key=lambda t: t[0],
             reverse=True,
         )
